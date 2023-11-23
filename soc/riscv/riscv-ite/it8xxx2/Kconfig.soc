@@ -36,6 +36,18 @@ config SOC_IT8XXX2_REG_SET_V2
 	  This option is selected by a variable of which soc, and will
 	  determine the register for the IT82xx2 specification.
 
+config SOC_BOOT_NIST
+	bool "Enable NIST as Bootloader or not"
+	help
+	  XXXX
+
+config SOC_IT8XXX2_BOOT_CODE_SIZE
+	hex "boot code binary size in bytes"
+	default 0x8000 if SOC_BOOT_NIST
+	default 0x0000
+	help
+	  Reserve sapce for NIST
+
 if SOC_IT8XXX2
 
 choice IT8XXX2_SERIES
@@ -64,6 +76,10 @@ config SOC_IT82202_AX
 
 config SOC_IT82302_AX
 	bool "IT82302 AX version"
+	select SOC_IT8XXX2_REG_SET_V2
+
+config SOC_IT82002_AW
+	bool "IT82002 AW version"
 	select SOC_IT8XXX2_REG_SET_V2
 
 endchoice

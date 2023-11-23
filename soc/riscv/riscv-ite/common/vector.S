@@ -15,7 +15,10 @@ GTEXT(__start)
 GTEXT(__initialize)
 GTEXT(_isr_wrapper)
 
-SECTION_FUNC(vectors, __start)
+SECTION_FUNC(vectors, __start) 
+	j __startup
+.fill CONFIG_SOC_IT8XXX2_BOOT_CODE_SIZE - 4, 1, 0
+__startup:
 #ifdef CONFIG_RISCV_GP
 	.option push
 	.option norelax
@@ -67,7 +70,7 @@ SECTION_FUNC(vectors, __start)
  * bit1: it must be 0b.
  * bit0: it must be 0b.
  */
-.org 0x80
+.org (0x80 + CONFIG_SOC_IT8XXX2_BOOT_CODE_SIZE)
 .balign 16
 .global eflash_sig
 eflash_sig:
