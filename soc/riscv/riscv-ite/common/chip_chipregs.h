@@ -14,12 +14,22 @@
 #define ECREG(x)        x
 #else
 
+extern uint8_t EC_INDIRECT_READ_FLASH;
 /*
  * Macros for hardware registers access.
  */
 #define ECREG(x)		(*((volatile unsigned char *)(x)))
 #define ECREG_u16(x)		(*((volatile unsigned short *)(x)))
 #define ECREG_u32(x)		(*((volatile unsigned long  *)(x)))
+
+/* Macros for SRAM data acess. */
+#define SD_UCHAR_8(x) (*((unsigned char *)(x)))
+#define SD_UINT_16(x) (*((unsigned short *)(x)))
+#define SD_ULONG_32(x) (*((unsigned long *)(x)))
+
+#define SD_PTR_UCHAR_8(x) ((unsigned char *)(x))
+#define SD_PTR_UINT_16(x) ((unsigned short *)(x))
+#define SD_PTR_ULONG_32(x) ((unsigned long *)(x))
 
 /*
  * MASK operation macros
@@ -152,7 +162,7 @@
 
 #define IVECT			ECREG(EC_REG_BASE_ADDR + 0x3F10)
 
-
+#define STCDMACR		ECREG(EC_REG_BASE_ADDR + 0x1080)
 /*
  * TODO: use pinctrl node instead of following register declarations
  *       to fix in tcpm\it83xx_pd.h.
@@ -824,6 +834,8 @@ struct smfi_it8xxx2_regs {
 /* SMFI register fields */
 /* EC-Indirect read internal flash */
 #define EC_INDIRECT_READ_INTERNAL_FLASH BIT(6)
+/* EC-Indirect read external flash */
+#define EC_INDIRECT_READ_EXTERNAL_FLASH 0
 /* Enable EC-indirect page program command */
 #define IT8XXX2_SMFI_MASK_ECINDPP BIT(3)
 /* Scratch SRAM 0 address(BIT(19)) */
@@ -1429,7 +1441,296 @@ enum chip_pll_mode {
 #define IT83XX_SPI_RVLIM                   BIT(0)
 #define IT83XX_SPI_RX_VLISR          ECREG(IT83XX_SPI_BASE + 0x27)
 #define IT83XX_SPI_RVLI                    BIT(0)
+/* Wait Next Clock Rising */
+#define	WNCKR						ECREG(EC_REG_BASE_ADDR+0x200B)
 
+/*
+ * ****************************************************************************
+ * (1Exxh) EC Clock and Power Management controller (ECPM)
+ * ****************************************************************************
+ */
+/* Clock Gating Control 1 */
+#define	CGCTRL1R    	ECREG(EC_REG_BASE_ADDR+0x1E01)
+
+/* Clock Gating Control 2 */
+#define	CGCTRL2R      	ECREG(EC_REG_BASE_ADDR+0x1E02)
+
+/* Clock Gating Control 3 */
+#define	CGCTRL3R		ECREG(EC_REG_BASE_ADDR+0x1E05)
+
+/* PLL Control */
+#define	PLLCTRL        	ECREG(EC_REG_BASE_ADDR+0x1E03)
+
+/* Auto Clock Gating */
+#define	AUTOCG			ECREG(EC_REG_BASE_ADDR+0x1E04)
+
+/* PLL Frequency */
+#define	PLLFREQR		ECREG(EC_REG_BASE_ADDR+0x1E06)
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+#define PLL_8M			0
+#define PLL_16M			1
+#define PLL_24M			2
+#define PLL_32M			3
+#define PLL_48M			4
+#define PLL_64M			5
+#define PLL_72M			6
+#define PLL_96M			7
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+/* PLL Frequency */
+#define	PLLSSCR			ECREG(EC_REG_BASE_ADDR+0x1E07)
+
+/* PLL Clock Source Status */
+#define PLLCSS          ECREG(EC_REG_BASE_ADDR+0x1E08)
+
+/* Clock Gating Control 4 Register */
+#define CGCTRL4R        ECREG(EC_REG_BASE_ADDR+0x1E09)
+
+#define EC_1E00         ECREG(EC_REG_BASE_ADDR+0x1E00)
+#define ECPM_PDCTRL1R   ECREG(EC_REG_BASE_ADDR+0x1E01)
+#define EC_1E03         ECREG(EC_REG_BASE_ADDR+0x1E03)
+#define EC_1E06         ECREG(EC_REG_BASE_ADDR+0x1E06)
+
+/* LDO Control Register */
+#define LDOCTR          ECREG(EC_REG_BASE_ADDR+0x1E0A)
+
+/* PLL Stable Time Control Register */
+#define PLLSTCR         ECREG(EC_REG_BASE_ADDR+0x1E0B)
+
+/* System Clock Divide Control Register 0 */
+#define SCDCR0          ECREG(EC_REG_BASE_ADDR+0x1E0C)
+
+/* System Clock Divide Control Register 1 */
+#define SCDCR1          ECREG(EC_REG_BASE_ADDR+0x1E0D)
+
+/* System Clock Divide Control Register 2 */
+#define SCDCR2          ECREG(EC_REG_BASE_ADDR+0x1E0E)
+
+/* System Clock Divide Control Register 3 */
+#define SCDCR3          ECREG(EC_REG_BASE_ADDR+0x1E0F)
+
+/*
+ * ****************************************************************************
+ * (3Cxxh) Crypto
+ * ****************************************************************************
+ */
+#define Crypto_Base_Addr 	EC_REG_BASE_ADDR+0x3C00
+
+#define	SHA256CR		 	    	ECREG(Crypto_Base_Addr+0x00)
+
+//for 82302 change
+#define	SHA_256			0x00
+#define	SHA_512			0x10
+#define	SHA_224			0x20
+#define	SHA_384			0x30
+#define	SHA_1			  0x40
+
+#define SHA256WB          BIT(2)  /* SHA256 Write back */
+#define SHA256INI         BIT(1)  /* SHA256 Initialization */
+#define SHA256EXE         BIT(0)  /* SHA256 Loading and Execution */
+
+#define	SHA256SR			    	ECREG(Crypto_Base_Addr+0x01)
+
+#define SHA256IE          BIT(3)  /* SHA256 Interrupt Enable */
+#define SHA256IS          BIT(2)  /* SHA256 Interrupt Status */
+#define SHA256BUSY        BIT(0)  /* SHA256 Busy */
+
+#define	SHA256ECR			     	ECREG(Crypto_Base_Addr+0x02)
+#define	load_512bit_into_SHA256_exe	0x00
+#define	load_1024bit_into_SHA256_exe	0x01
+#define	load_512bytes_into_SHA256_exe	0x07
+#define	load_1024bytes_into_SHA256_exe	0x0F
+
+#define	load_1_Round_Data_into_SHA_exe	0x00
+#define	load_2_Round_Data_into_SHA_exe	0x01
+#define	load_8_Round_Data_into_SHA_exe	0x07
+#define	load_16_Round_Data_into_SHA_exe	0x0F
+
+#define	SHA256DBA0R			     	ECREG(Crypto_Base_Addr+0x03)
+//SHA256 DLM base addr[7:6]
+
+#define	SHA256DBA1R			     	ECREG(Crypto_Base_Addr+0x04)
+
+
+#define SHA_1_224_256_block_length	0x40
+#define SHA_384_512_block_length	0x80
+
+//old define
+#define	AES128CR		 	     	ECREG(Crypto_Base_Addr+0x20)
+
+#define AES128CM   		BIT(7)  /* AES128 Counter Mode_old */
+#define AES128DS        BIT(6)  /* AES128 Data Size */
+#define AES128Reset     BIT(5)  /* AES128 Reset */
+#define AES128KD        BIT(4)  /* AES128 Key decryption */
+#define AES128IE        BIT(1)  /* AES128 Interrupt Enable */
+#define AES128CE        BIT(0)  /*AES128 Clock Enable */
+
+#define	AES128SR			     	ECREG(Crypto_Base_Addr+0x21)
+
+#define AES128ES        BIT(7)  /* AES128 Encrption Start */
+#define AES128ED        BIT(1)  /* AES128 Encrption Done */
+#define AES128B			BIT(0)  /* AES128 Busy */
+
+#define	AES128DBAB0		 	     	ECREG(Crypto_Base_Addr+0x22)
+//AES128 DLM base addr[7:4]
+//AES128 DLM base addr[3:0] always 0
+
+#define	AES128DBAB1			     	ECREG(Crypto_Base_Addr+0x23)
+//AES128 DLM base addr[14:8]
+
+#define	AES128NCB15		 	     	ECREG(Crypto_Base_Addr+0x24)
+//AES128 Nonce[7:0]
+
+#define	AES128NCB14			     	ECREG(Crypto_Base_Addr+0x25)
+//AES128 Nonce[15:8]
+
+#define	AES128NCB13		 	     	ECREG(Crypto_Base_Addr+0x26)
+//AES128 Nonce[23:16]
+
+#define	AES128KNBAB0			  	ECREG(Crypto_Base_Addr+0x27)
+
+//AES128 key/nonce base addr[7:5]
+//AES128 key/nonce base addr[4:0] always 0
+
+#define	AES128KNBAB1				ECREG(Crypto_Base_Addr+0x28)
+//AES128 key/nonce base addr[14:8]
+
+
+//***********************************************************************************
+#define	AESCR		 	     		ECREG(Crypto_Base_Addr+0x20)
+
+#define AESCM_OLD		BIT(7)  /* AES Counter Mode_old */
+#define AESENC_1K		BIT(6)  /* AES Encrypt 1K */
+#define AESReset		BIT(5)  /* AES Reset */
+#define AES_XOR_Key_EN	BIT(4)  /* AES XOR Key En */
+
+#define AES128		0x00	 /* AES 128 */
+#define AES192		0x08	 /* AES 192 */
+#define AES256		0x04	 /* AES 256 */
+
+#define AESIE			BIT(1)  /* AES Interrupt Enable */
+#define AESCE			BIT(0)  /* AES Clock Enable */
+
+#define	AESSR			     		ECREG(Crypto_Base_Addr+0x21)
+
+#define AESSTART		BIT(7)  /* AES Encrption Start */
+#define AESED			BIT(1)  /* AES Encrption Done */
+#define AESB         	BIT(0)  /* AES Busy */
+
+#define	AESDBAB0		     		ECREG(Crypto_Base_Addr+0x22)
+//AES DLM base addr[7:4]
+//AES DLM base addr[3:0] always 0
+
+#define	AESDBAB1	             	ECREG(Crypto_Base_Addr+0x23)
+//AES128 DLM base addr[15:8]
+
+#define	AESNCB15		 	     	ECREG(Crypto_Base_Addr+0x24)
+//AES128 Nonce[7:0]
+
+#define	AESNCB14			     	ECREG(Crypto_Base_Addr+0x25)
+//AES128 Nonce[15:8]
+
+#define	AESNCB13		 	     	ECREG(Crypto_Base_Addr+0x26)
+//AES128 Nonce[23:16]
+
+#define	AESKNBAB0		 	     	ECREG(Crypto_Base_Addr+0x27)
+
+//AES128 key/nonce base addr[7:5]
+//AES128 key/nonce base addr[4:0] always 0
+
+#define	AESKNBAB1			     	ECREG(Crypto_Base_Addr+0x28)
+//AES128 key/nonce base addr[15:8]
+
+#define	AESCR2		 	     		ECREG(Crypto_Base_Addr+0x29)
+
+#define AESDEC			BIT(7)  /* AES descrypt */
+#define AESINV_KEY		BIT(6)  /* AES Inverse Key */
+#define AESIV			BIT(5)  /* AES iv */
+
+#define AESECB 		0x00
+#define AESCBC 		0x01
+#define AESOFB 		0x02
+#define AESCTR 		0x03
+
+
+//offset 31h,32h only 82302 use
+#define	AESKNBAB0_Temp				ECREG(Crypto_Base_Addr+0x31)
+//AES128 key/nonce base addr[7]
+//AES128 key/nonce base addr[6:0] always 0
+
+#define	AESKNBAB1_Temp				ECREG(Crypto_Base_Addr+0x32)
+//AES128 key/nonce base addr[15:8]
+
+
+
+//********************************************************************************
+
+#define	RSACR						ECREG(Crypto_Base_Addr+0x40)
+
+#define RSAE			BIT(7)  /* RSA Enable */
+#define RSAReset        BIT(6)  /* RSA Reset */
+//#define RSAES	        BIT(5)BIT(4)  /*  */
+//			00:public exponent = 65537
+//			01:public exponent = 3
+//      10:any exponent
+//      11:reserved
+#define RSA_exponent_3	0x10
+
+#define RSAIE           BIT(1)  /* RSA Interrupt Enable */
+#define RSACE           BIT(0)  /* RSA Clock Enable */
+
+#define	RSAC2R						ECREG(Crypto_Base_Addr+0x41)
+#define RSA_Lenght_4096		0x80		//128*32
+#define RSA_Lenght_2048		0x40		//64*32
+#define RSA_Lenght_1024		0x20		//32*32
+#define RSA_Lenght_512		0x10		//16*32
+
+
+#define	RSASR						ECREG(Crypto_Base_Addr+0x42)
+#define RSACS			BIT(7)  /* RSA Calculation Start */
+#define RSACD           BIT(1)  /* RSA Calculation Done */
+#define RSAB			BIT(0)  /* RSA Busy */
+
+
+#define	RSABAB1						ECREG(Crypto_Base_Addr+0x44)
+//bit5,bit4    RSAbase addr[13:12]
+
+#define RNG_GEN						ECREG(Crypto_Base_Addr+0x61)
+#define RNG_DATA					ECREG(Crypto_Base_Addr+0x60)
+
+
+#define ECC_CTRL10_DEC				ECREG(Crypto_Base_Addr+0x80)
+#define	ECC_MOD_		BIT(5)
+#define	ECC_INV_		BIT(4)
+#define	ECC_ADD_		BIT(3)
+#define	ECC_SUB_		BIT(2)
+#define	ECC_MUL_		BIT(1)
+#define	ECC_DV2_		BIT(0)
+
+
+#define ECC_CTRL11_DEC				ECREG(Crypto_Base_Addr+0x81)
+#define	ECC_ECDH_		BIT(7)
+#define	ECC_VERIFY_		BIT(6)
+#define	ECC_ADD_POINT_	BIT(1)
+#define	ECC_DOUBLE_POINT_	BIT(0)
+
+
+#define ECC_CTRL12_DEC				ECREG(Crypto_Base_Addr+0x82)
+#define ECC_EN			BIT(7)
+#define ECC_RESET		BIT(6)
+#define ECC_MUL_THEN_MOD	BIT(5)
+
+//BIT2,BIT1 select ECC model		      bit2bit1
+#define ECC_P192		0x00	    //  0   0 	
+#define ECC_P224		0x02        //  0   1  
+#define ECC_P256		0x04        //  1   0  
+#define ECC_P384		0x06        //  1   1
+#define ECC_CLK_EN		BIT(0)
+
+#define ECC_CTRL13_DEC				ECREG(Crypto_Base_Addr+0x83)
+#define ECC_TIMEOUT_FLAG	BIT(7)
+#define ECC_TIMEOUT_EN		BIT(6)
+#define ECC_ADD_COPY_G_POINT	BIT(0)
 /**
  *
  * (20xxh) General Control (GCTRL) registers

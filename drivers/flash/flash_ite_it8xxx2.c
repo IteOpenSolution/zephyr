@@ -113,7 +113,7 @@ void __soc_ram_code ramcode_flash_follow_mode(void)
 	 * Enter follow mode by writing 0xf to low nibble of ECINDAR3 register,
 	 * and set high nibble as 0x4 to select internal flash.
 	 */
-	flash_regs->SMFI_ECINDAR3 = (EC_INDIRECT_READ_INTERNAL_FLASH |
+	flash_regs->SMFI_ECINDAR3 = (EC_INDIRECT_READ_FLASH |
 		((FLASH_FSCE_HIGH_ADDRESS >> 24) & GENMASK(3, 0)));
 
 	/* Set FSCE# as high level by writing 0 to address xfff_fe00h */
@@ -130,7 +130,7 @@ void __soc_ram_code ramcode_flash_follow_mode_exit(void)
 	struct smfi_it8xxx2_regs *const flash_regs = FLASH_IT8XXX2_REG_BASE;
 
 	/* Exit follow mode, and keep the setting of selecting internal flash */
-	flash_regs->SMFI_ECINDAR3 = EC_INDIRECT_READ_INTERNAL_FLASH;
+	flash_regs->SMFI_ECINDAR3 = 0x40;
 	flash_regs->SMFI_ECINDAR2 = 0x00;
 }
 
@@ -247,18 +247,22 @@ int __soc_ram_code ramcode_flash_verify(int addr, int size, const char *data)
 	uint8_t *wbuf = (uint8_t *)data;
 	uint8_t *flash = (uint8_t *)addr;
 
-	if (data == NULL) {
-		/* verify for erase */
-		for (i = 0; i < size; i++) {
-			if (flash[i] != 0xFF) {
-				return -EINVAL;
+	/* verify internal flash only */
+	if(EC_INDIRECT_READ_FLASH == EC_INDIRECT_READ_INTERNAL_FLASH)
+	{
+		if (data == NULL) {
+			/* verify for erase */
+			for (i = 0; i < size; i++) {
+				if (flash[i] != 0xFF) {
+					return -EINVAL;
+				}
 			}
-		}
-	} else {
-		/* verify for write */
-		for (i = 0; i < size; i++) {
-			if (flash[i] != wbuf[i]) {
-				return -EINVAL;
+		} else {
+			/* verify for write */
+			for (i = 0; i < size; i++) {
+				if (flash[i] != wbuf[i]) {
+					return -EINVAL;
+				}
 			}
 		}
 	}
@@ -348,7 +352,7 @@ static int __soc_ram_code flash_it8xxx2_read(const struct device *dev, off_t off
 	int i;
 
 	for (i = 0; i < len; i++) {
-		flash_regs->SMFI_ECINDAR3 = EC_INDIRECT_READ_INTERNAL_FLASH;
+		flash_regs->SMFI_ECINDAR3 = EC_INDIRECT_READ_FLASH;
 		flash_regs->SMFI_ECINDAR2 = (offset >> 16) & GENMASK(7, 0);
 		flash_regs->SMFI_ECINDAR1 = (offset >> 8) & GENMASK(7, 0);
 		flash_regs->SMFI_ECINDAR0 = (offset & GENMASK(7, 0));
@@ -468,7 +472,7 @@ static int flash_it8xxx2_init(const struct device *dev)
 	struct flash_it8xxx2_dev_data *data = dev->data;
 
 	/* By default, select internal flash for indirect fast read. */
-	flash_regs->SMFI_ECINDAR3 = EC_INDIRECT_READ_INTERNAL_FLASH;
+	flash_regs->SMFI_ECINDAR3 = EC_INDIRECT_READ_FLASH;
 
 	/*
 	 * If the embedded flash's size of this part number is larger
